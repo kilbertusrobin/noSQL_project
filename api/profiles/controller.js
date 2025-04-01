@@ -165,22 +165,20 @@ const deleteExperience = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
 const addSkill = async (req, res) => {
     try {
         const { skill } = req.body;
-        
-        const profile = await Profile.findById(req.params.id);
-        if (profile && !profile.deleted) {
-            if (!profile.skills.includes(skill)) {
-                profile.skills.push(skill);
-                const updatedProfile = await profile.save();
-                res.json(updatedProfile);
-            } else {
-                res.status(400).json({ message: 'Skill already exists' });
-            }
+
+        const profile = await Profile.findOneAndUpdate(
+            { _id: req.params.id, deleted: false, skills: { $ne: skill } },
+            { $push: { skills: skill } },
+            { new: true }
+        );
+
+        if (profile) {
+            res.json(profile);
         } else {
-            res.status(404).json({ message: 'Profile not found' });
+            res.status(400).json({ message: 'Profile not found or skill already exists' });
         }
     } catch (error) {
         res.status(400).json({ message: error.message });
